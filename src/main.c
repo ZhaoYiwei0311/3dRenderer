@@ -134,14 +134,20 @@ void update(void) {
         for (int j = 0; j < 3; j++) {
             vec4_t transformed_vertex = vec4_from_vec3(face_vertices[j]);
 
-            // Use a matrix to scale original vertex
-            transformed_vertex = mat4_mul_vec4(scale_matrix, transformed_vertex);
-            transformed_vertex = mat4_mul_vec4(rotation_matrix_x, transformed_vertex);
-            transformed_vertex = mat4_mul_vec4(rotation_matrix_y, transformed_vertex);
-            transformed_vertex = mat4_mul_vec4(rotation_matrix_z, transformed_vertex);
-            transformed_vertex = mat4_mul_vec4(translation_matrix, transformed_vertex);
+            // Create a World Matrix combining scale, rotation and translation matrices
+            // Order matters [T] * [R] * [S] * v
+            mat4_t world_matrix = mat4_identity();
+            world_matrix = mat4_mul_mat4(scale_matrix, world_matrix);
+            world_matrix = mat4_mul_mat4(rotation_matrix_x, world_matrix);
+            world_matrix = mat4_mul_mat4(rotation_matrix_y, world_matrix);
+            world_matrix = mat4_mul_mat4(rotation_matrix_z, world_matrix);
+            world_matrix = mat4_mul_mat4(translation_matrix, world_matrix);
+            world_matrix = mat4_mul_mat4(translation_matrix, world_matrix);
 
 
+            // Multiply the world matrix by the original vecotr
+            transformed_vertex = mat4_mul_vec4(world_matrix, transformed_vertex);
+            
             // Save the transformed vertex in the array of transformed vertices
             transformed_vertices[j] = transformed_vertex;
         }
