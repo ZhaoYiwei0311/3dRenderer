@@ -1,12 +1,16 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "upng.h"
 #include "array.h"
 #include "display.h"
 #include "vector.h"
 #include "mesh.h"
 #include "light.h"
 #include "matrix.h"
+#include "texture.h"
+#include "triangle.h"
+
 #define M_PI 3.14159265358979323846
 
 triangle_t* triangles_to_render = NULL;
@@ -32,7 +36,7 @@ void setup(void) {
     // Creating a SDL texture that is used to display the color buffer
     color_buffer_texture = SDL_CreateTexture(
             renderer,
-            SDL_PIXELFORMAT_ARGB8888,
+            SDL_PIXELFORMAT_RGBA32,
             SDL_TEXTUREACCESS_STREAMING,
             window_width,
             window_height
@@ -45,9 +49,15 @@ void setup(void) {
     float zfar = 100.0;
     proj_matrix = mat4_make_perspective(fov, aspect, znear, zfar);
 
+    // Manually load the hardcoded texture data from the static array
+//    mesh_texture = (uint32_t*)REDBRICK_TEXTURE;
+    texture_width = 64;
+    texture_height = 64;
+
     // Loads the cube values in the mesh data structure
-//     load_cube_mesh_data();
-    load_obj_file_data("./assets/f22.obj");
+//    load_cube_mesh_data();
+       load_obj_file_data("./assets/crab.obj");
+    load_png_texture_data("./assets/crab.png");
 }
 
 void process_input(void) {
@@ -73,6 +83,12 @@ void process_input(void) {
             }
             if (event.key.keysym.sym == SDLK_4) {
                 render_method = RENDER_FILL_TRIANGLE_WIRE;
+            }
+            if (event.key.keysym.sym == SDLK_5) {
+                render_method = RENDER_TEXTURED;
+            }
+            if (event.key.keysym.sym == SDLK_6) {
+                render_method = RENDER_TEXTURED_WIRE;
             }
             if (event.key.keysym.sym == SDLK_c) {
                 cull_method = CULL_BACKFACE;
@@ -100,8 +116,8 @@ void update(void) {
 
     // Change the mesh scale / rotation values per animation frame
     mesh.rotation.x += 0.01;
-//    mesh.rotation.y += 0.01;
-//    mesh.rotation.z += 0.01;
+    mesh.rotation.y += 0.01;
+    mesh.rotation.z += 0.01;
 //
 //    mesh.scale.x += 0.002;
 //    mesh.scale.y += 0.002;
@@ -124,9 +140,9 @@ void update(void) {
         face_t mesh_face = mesh.faces[i];
 
         vec3_t face_vertices[3];
-        face_vertices[0] = mesh.vertices[mesh_face.a - 1];
-        face_vertices[1] = mesh.vertices[mesh_face.b - 1];
-        face_vertices[2] = mesh.vertices[mesh_face.c - 1];
+        face_vertices[0] = mesh.vertices[mesh_face.a];
+        face_vertices[1] = mesh.vertices[mesh_face.b];
+        face_vertices[2] = mesh.vertices[mesh_face.c];
 
         vec4_t transformed_vertices[3];
 
@@ -150,7 +166,6 @@ void update(void) {
             // Save the transformed vertex in the array of transformed vertices
             transformed_vertices[j] = transformed_vertex;
         }
-
 
         // Check backface culling
         vec3_t vector_a = vec3_from_vec4(transformed_vertices[0]); //   A   //
@@ -213,9 +228,14 @@ void update(void) {
 
         triangle_t projected_triangle = {
                 .points = {
-                        {projected_points[0].x, projected_points[0].y},
-                        {projected_points[1].x, projected_points[1].y},
-                        {projected_points[2].x, projected_points[2].y},
+                        {projected_points[0].x, projected_points[0].y, projected_points[0].z, projected_points[0].w},
+                        {projected_points[1].x, projected_points[1].y, projected_points[1].z, projected_points[1].w},
+                        {projected_points[2].x, projected_points[2].y, projected_points[2].z, projected_points[2].w},
+                },
+                .texcoords = {
+                        {mesh_face.a_uv.u, mesh_face.a_uv.v},
+                        {mesh_face.b_uv.u, mesh_face.b_uv.v},
+                        {mesh_face.c_uv.u, mesh_face.c_uv.v}
                 },
                 .color = triangle_color,
                 .avg_depth = avg_depth
@@ -250,8 +270,8 @@ void render(void) {
     for (int i = 0; i < num_triangles; i++) {
         triangle_t triangle = triangles_to_render[i];
 
+        // Draw filled triangle
         if (render_method == RENDER_FILL_TRIANGLE || render_method == RENDER_FILL_TRIANGLE_WIRE) {
-            // Draw filled triangle
             draw_filled_triangle(
                     triangle.points[0].x,
                     triangle.points[0].y,
@@ -263,8 +283,19 @@ void render(void) {
             );
         }
 
-        if (render_method == RENDER_WIRE || render_method == RENDER_FILL_TRIANGLE_WIRE || render_method == RENDER_WIRE_VERTEX) {
-            // Draw unfilled triangle
+        // Draw textured triangle
+        if (render_method == RENDER_TEXTURED || render_method == RENDER_TEXTURED_WIRE) {
+            draw_textured_triangle(
+                    triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w, triangle.texcoords[0].u, triangle.texcoords[0].v,  // vertex A
+                    triangle.points[1].x, triangle.points[1].y, triangle.points[1].z, triangle.points[1].w, triangle.texcoords[1].u, triangle.texcoords[1].v,  // vertex B
+                    triangle.points[2].x, triangle.points[2].y, triangle.points[2].z, triangle.points[2].w, triangle.texcoords[2].u, triangle.texcoords[2].v,  // vertex C
+                    mesh_texture
+                    );
+
+        }
+
+        // Draw unfilled triangle
+        if (render_method == RENDER_WIRE || render_method == RENDER_FILL_TRIANGLE_WIRE || render_method == RENDER_WIRE_VERTEX || render_method == RENDER_TEXTURED_WIRE) {
             draw_triangle(
                     triangle.points[0].x,
                     triangle.points[0].y,
@@ -276,8 +307,8 @@ void render(void) {
             );
         }
 
+        // Draw vertex points
         if (render_method == RENDER_WIRE_VERTEX) {
-            // Draw vertex points
             draw_rect(triangle.points[0].x - 3, triangle.points[0].y - 3, 3, 3, 0xFF00FF00);
             draw_rect(triangle.points[1].x - 3, triangle.points[1].y - 3, 3, 3, 0xFF00FF00);
             draw_rect(triangle.points[2].x - 3, triangle.points[2].y - 3, 3, 3, 0xFF00FF00);
@@ -299,9 +330,9 @@ void render(void) {
 // Free the memory that was dynamically allocated by the program
 void free_resources(void) {
     free(color_buffer);
+    upng_free(png_texture);
     array_free(mesh.faces);
     array_free(mesh.vertices);
-
 }
 
 int main(void) {
