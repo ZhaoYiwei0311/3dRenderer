@@ -11,6 +11,7 @@
 #include "matrix.h"
 #include "texture.h"
 #include "triangle.h"
+#include "clipping.h"
 
 #define M_PI 3.14159265358979323846
 
@@ -53,10 +54,13 @@ void setup(void) {
     // Initialize the perspective projection matrix
     float fov = M_PI / 3.0; // 60 degree
     float aspect = (float)window_height / (float)window_width;
-    float znear = 0.1;
-    float zfar = 100.0;
-    proj_matrix = mat4_make_perspective(fov, aspect, znear, zfar);
+    float z_near = 0.1;
+    float z_far = 100.0;
+    proj_matrix = mat4_make_perspective(fov, aspect, z_near, z_far);
 
+    // Initialize frustum planes with a point and a normal
+    init_frustum_planes(fov, z_near, z_far);
+    
     // Loads the cube values in the mesh data structure
 //    load_cube_mesh_data();
     load_obj_file_data("./assets/f22.obj");
@@ -155,7 +159,6 @@ void update(void) {
     // Create the view matrix looking
     // Compute the new camera rotation and translation for the FPS camera movement
 
-
     // Find the target
     // Initialize the target looking at the positive z-axis
     vec3_t target = { 0, 0, 1};
@@ -178,9 +181,13 @@ void update(void) {
     mat4_t rotation_matrix_y = mat4_make_rotation_y(mesh.rotation.y);
     mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh.rotation.z);
 
-
+    // Loop all triangle faces of mesh
     int num_faces = array_length(mesh.faces);
     for (int i = 0; i < num_faces; i++) {
+        if (i != 4) {
+            continue;
+        }
+
         face_t mesh_face = mesh.faces[i];
 
         vec3_t face_vertices[3];
@@ -245,6 +252,16 @@ void update(void) {
                 continue;
             }
         }
+
+        // Create a polygon from the original transform
+        polygon_t polygon = create_polygon_from_triangle(
+                vec3_from_vec4(transformed_vertices[0]),
+                vec3_from_vec4(transformed_vertices[1]),
+                vec3_from_vec4(transformed_vertices[2])
+                );
+
+        // Clip the polygon and returns a new polygon with potential new vertices
+        clip_polygon(&polygon);
 
         vec4_t projected_points[3];
 
