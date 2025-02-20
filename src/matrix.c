@@ -2,20 +2,24 @@
 #include "matrix.h"
 
 mat4_t mat4_identity(void) {
+    // | 1 0 0 0 |
+    // | 0 1 0 0 |
+    // | 0 0 1 0 |
+    // | 0 0 0 1 |
     mat4_t m = {{
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {0, 0, 0, 1}
+        { 1, 0, 0, 0 },
+        { 0, 1, 0, 0 },
+        { 0, 0, 1, 0 },
+        { 0, 0, 0, 1 }
     }};
     return m;
 }
 
 mat4_t mat4_make_scale(float sx, float sy, float sz) {
-    // | sx 0 0 0 |
-    // | 0 sy 0 0 |
-    // | 0 0 sz 0 |
-    // | 0 0 0 1 |
+    // | sx  0  0  0 |
+    // |  0 sy  0  0 |
+    // |  0  0 sz  0 |
+    // |  0  0  0  1 |
     mat4_t m = mat4_identity();
     m.m[0][0] = sx;
     m.m[1][1] = sy;
@@ -24,10 +28,10 @@ mat4_t mat4_make_scale(float sx, float sy, float sz) {
 }
 
 mat4_t mat4_make_translation(float tx, float ty, float tz) {
-    // | 1 0 0 tx |
-    // | 0 1 0 ty |
-    // | 0 0 1 tz |
-    // | 0 0 0 1 |
+    // | 1  0  0  tx |
+    // | 0  1  0  ty |
+    // | 0  0  1  tz |
+    // | 0  0  0  1  |
     mat4_t m = mat4_identity();
     m.m[0][3] = tx;
     m.m[1][3] = ty;
@@ -38,10 +42,10 @@ mat4_t mat4_make_translation(float tx, float ty, float tz) {
 mat4_t mat4_make_rotation_x(float angle) {
     float c = cos(angle);
     float s = sin(angle);
-    // | 1 0 0 0 |
-    // | 0 c -s 0 |
-    // | 0 s c 0 |
-    // | 0 0 0 1 |
+    // | 1  0  0  0 |
+    // | 0  c -s  0 |
+    // | 0  s  c  0 |
+    // | 0  0  0  1 |
     mat4_t m = mat4_identity();
     m.m[1][1] = c;
     m.m[1][2] = -s;
@@ -53,10 +57,10 @@ mat4_t mat4_make_rotation_x(float angle) {
 mat4_t mat4_make_rotation_y(float angle) {
     float c = cos(angle);
     float s = sin(angle);
-    // | c 0 s 0 |
-    // | 0 1 0 0 |
-    // | -s 0 c 0 |
-    // | 0 0 0 1 |
+    // |  c  0  s  0 |
+    // |  0  1  0  0 |
+    // | -s  0  c  0 |
+    // |  0  0  0  1 |
     mat4_t m = mat4_identity();
     m.m[0][0] = c;
     m.m[0][2] = s;
@@ -68,43 +72,16 @@ mat4_t mat4_make_rotation_y(float angle) {
 mat4_t mat4_make_rotation_z(float angle) {
     float c = cos(angle);
     float s = sin(angle);
-    // | c -s 0 0 |
-    // | s c 0 0 |
-    // | 0 0 1 0 |
-    // | 0 0 0 1 |
+    // | c -s  0  0 |
+    // | s  c  0  0 |
+    // | 0  0  1  0 |
+    // | 0  0  0  1 |
     mat4_t m = mat4_identity();
     m.m[0][0] = c;
     m.m[0][1] = -s;
     m.m[1][0] = s;
     m.m[1][1] = c;
     return m;
-}
-
-mat4_t mat4_make_perspective(float fov, float aspect, float znear, float zfar) {
-    // | (h/w)*1/tan(fov/2)         0           0           0 |
-    // |                  0     1/tna(fov/2)    0           0 |
-    // |                  0         0           zf/(zf-zn)  (-zf*zn)/(zf-zn) |
-    // |                  0         0           1           0 |
-    mat4_t m = {{{0}}};
-    m.m[0][0] = aspect * (1 / tan(fov / 2));
-    m.m[1][1] = 1 / tan(fov / 2);
-    m.m[2][2] = zfar / (zfar - znear);
-    m.m[2][3] = (-zfar * znear) / (zfar - znear);
-    m.m[3][2] = 1.0;
-    return m;
-}
-
-vec4_t mat4_mul_vec4_project(mat4_t mat_proj, vec4_t v) {
-    // Multiply the projection matrix by original vector
-    vec4_t result = mat4_mul_vec4(mat_proj, v);
-
-    // Perform perspective divide with original z-value that is now stored in w
-    if (result.w != 0.0) {
-        result.x /= result.w;
-        result.y /= result.w;
-        result.z /= result.w;
-    }
-    return result;
 }
 
 vec4_t mat4_mul_vec4(mat4_t m, vec4_t v) {
@@ -126,6 +103,20 @@ mat4_t mat4_mul_mat4(mat4_t a, mat4_t b) {
     return m;
 }
 
+mat4_t mat4_make_perspective(float fov, float aspect, float znear, float zfar) {
+    // | (h/w)*1/tan(fov/2)             0              0                 0 |
+    // |                  0  1/tan(fov/2)              0                 0 |
+    // |                  0             0     zf/(zf-zn)  (-zf*zn)/(zf-zn) |
+    // |                  0             0              1                 0 |
+    mat4_t m = {{{ 0 }}};
+    m.m[0][0] = aspect * (1 / tan(fov / 2));
+    m.m[1][1] = 1 / tan(fov / 2);
+    m.m[2][2] = zfar / (zfar - znear);
+    m.m[2][3] = (-zfar * znear) / (zfar - znear);
+    m.m[3][2] = 1.0;
+    return m;
+}
+
 mat4_t mat4_look_at(vec3_t eye, vec3_t target, vec3_t up) {
     // Compute the forward (z), right (x), and up (y) vectors
     vec3_t z = vec3_sub(target, eye);
@@ -139,10 +130,10 @@ mat4_t mat4_look_at(vec3_t eye, vec3_t target, vec3_t up) {
     // | z.x   z.y   z.z  -dot(z,eye) |
     // |   0     0     0            1 |
     mat4_t view_matrix = {{
-                                  { x.x, x.y, x.z, -vec3_dot(x, eye) },
-                                  { y.x, y.y, y.z, -vec3_dot(y, eye) },
-                                  { z.x, z.y, z.z, -vec3_dot(z, eye) },
-                                  {   0,   0,   0,                 1 }
-                          }};
+        { x.x, x.y, x.z, -vec3_dot(x, eye) },
+        { y.x, y.y, y.z, -vec3_dot(y, eye) },
+        { z.x, z.y, z.z, -vec3_dot(z, eye) },
+        {   0,   0,   0,                 1 }
+    }};
     return view_matrix;
 }

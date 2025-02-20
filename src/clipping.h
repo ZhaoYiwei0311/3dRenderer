@@ -1,11 +1,11 @@
 #ifndef CLIPPING_H
 #define CLIPPING_H
 
-#include "vector.h"
 #include "triangle.h"
+#include "vector.h"
 
 #define MAX_NUM_POLY_VERTICES 10
-#define MAX_NUM_TRIANGLES 10
+#define MAX_NUM_POLY_TRIANGLES 10
 
 enum {
     LEFT_FRUSTUM_PLANE,
@@ -13,7 +13,7 @@ enum {
     TOP_FRUSTUM_PLANE,
     BOTTOM_FRUSTUM_PLANE,
     NEAR_FRUSTUM_PLANE,
-    FAR_FRUSTUM_PLANE,
+    FAR_FRUSTUM_PLANE
 };
 
 typedef struct {
@@ -27,8 +27,9 @@ typedef struct {
     int num_vertices;
 } polygon_t;
 
-void init_frustum_planes(float fovx, float fovy, float z_near, float z_far);
-polygon_t create_polygon_from_triangle(vec3_t v0, vec3_t v1, vec3_t v2, tex2_t t0, tex2_t t1, tex2_t t2);
-void triangles_from_polygon(polygon_t* polygon, triangle_t traingles[], int* num_triangles);
+void init_frustum_planes(float fov_x, float fov_y, float z_near, float z_far);
+polygon_t polygon_from_triangle(vec3_t v0, vec3_t v1, vec3_t v2, tex2_t t0, tex2_t t1, tex2_t t2);
+void triangles_from_polygon(polygon_t* polygon, triangle_t triangles[], int* num_triangles);
 void clip_polygon(polygon_t* polygon);
+
 #endif
