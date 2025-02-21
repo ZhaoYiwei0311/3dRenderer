@@ -124,21 +124,21 @@ void draw_triangle_texel(
     interpolated_u /= interpolated_reciprocal_w;
     interpolated_v /= interpolated_reciprocal_w;
 
-    // Map the UV coordinate to the full texture width and height
-    int tex_x = abs((int)(interpolated_u * texture_width)) % texture_width;
-    int tex_y = abs((int)(interpolated_v * texture_height)) % texture_height;
+    // // Map the UV coordinate to the full texture width and height
+    // int tex_x = abs((int)(interpolated_u * texture_width)) % texture_width;
+    // int tex_y = abs((int)(interpolated_v * texture_height)) % texture_height;
 
-    // Adjust 1/w so the pixels that are closer to the camera have smaller values
-    interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
+    // // Adjust 1/w so the pixels that are closer to the camera have smaller values
+    // interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
 
-    // Only draw the pixel if the depth value is less than the one previously stored in the z-buffer
-    if (interpolated_reciprocal_w < get_zbuffer_at(x, y)) {
-        // Draw a pixel at position (x,y) with the color that comes from the mapped texture
-        draw_pixel(x, y, texture[(texture_width * tex_y) + tex_x]);
+    // // Only draw the pixel if the depth value is less than the one previously stored in the z-buffer
+    // if (interpolated_reciprocal_w < get_zbuffer_at(x, y)) {
+    //     // Draw a pixel at position (x,y) with the color that comes from the mapped texture
+    //     draw_pixel(x, y, texture[(texture_width * tex_y) + tex_x]);
 
-        // Update the z-buffer value with the 1/w of this current pixel
-        update_zbuffer_at(x, y, interpolated_reciprocal_w);
-    }
+    //     // Update the z-buffer value with the 1/w of this current pixel
+    //     update_zbuffer_at(x, y, interpolated_reciprocal_w);
+    // }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
